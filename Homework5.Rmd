@@ -1,7 +1,7 @@
 ---
-title: 'N741: Homework 5'
-author: "Melinda K. Higgins, PhD."
-date: "February 27, 2017"
+title: 'NRSG 741 Homework 5'
+author: "Alan Jones"
+date: "March 15, 2017"
 output:
   word_document: default
   pdf_document: default
@@ -64,18 +64,127 @@ Wong$agegrp <- factor(Wong$agegrp,
 Using this dataset, and today's demos complete the following tasks:
 
 1. Make a table of non-parametric statistics (median and IQR) for the number of days and duration grouped by `sex`. You'll be using `summarise()` from the `dplyr` package. For a given variable `x` you'll use `median(x, na.rm=TRUE)`, `quantile(x, 0.25, na.rm=TRUE)`, and `quantile(x, 0.75, na.rm=TRUE)`. Give the table a title using the `caption=` option and update the column names with something nice using the `col.names=` option in the `knitr::kable()` command. 
+```{r}
+Table1 <- Wong %>%
+group_by(sex) %>%
+summarise(firstquantiledays = quantile(days,0.25, na.rm=TRUE), mediandays = median(days, na.rm=TRUE), thirdrdquantiledays = quantile(days, 0.75, na.rm=TRUE), firstquantileduration =   quantile(duration, 0.25, na.rm=TRUE), medianduration = median(duration, na.rm=TRUE), thirdquantileduration = quantile(duration, 0.75, na.rm=TRUE))
 
-2.  Make a table of parametric statistics (mean and SD) for the performance outcomes `piq` and `viq` grouped by `sex`. Like the table above, you'll be using `summarise()` from the `dplyr` package. Now you'll use `mean(x, na.rm=TRUE)` and `sd(x, na.rm=TRUE)`. Give the table a title using the `caption=` option and update the column names with something nice using the `col.names=` option in the `knitr::kable()` command. 
+knitr::kable(Table1, col.names=c("Sex", "1st Quantile Days", "Median Days", "3rd Quntile Days", "1st Quantile Duration", "Median Duration", "3rd Quantile Duration"), caption = "Summary Statistics of Days Post Coma and the Duration of Coma Grouped by Sex")
+
+```
+
+
+2.  Make a table of parametric statistics (mean and SD) for the performance outcomes `piq` and `viq` grouped by `sex`. Like the table above, you'll be using `summarise()` from the `dplyr` package. Now you'll use `mean(x, na.rm=TRUE)` and `sd(x, na.rm=TRUE)`. Give the table a title using the `caption=` option and update the column names with something nice using the `col.names=` option in the `knitr::kable()` command.
+```{r}
+Table2 <- Wong %>%
+group_by(sex) %>%
+summarise(avgperformance = mean(piq, na.rm=TRUE), sdperformance = sd(piq, na.rm=TRUE), avgverbal = mean(viq, na.rm=TRUE), sdverbal = sd(viq, na.rm=TRUE))
+
+knitr::kable(Table2, col.names=c("Sex", "Mean Performance", "Performance SD", "Mean Verbal", "Verbal SD"), caption="Performance IQ and Verbal IQ Summary Statistics Grouped by Sex")
+
+```
+
 
 3. Make a table containing the frequencies and relative percentages for `agegrp`. Use the example we did in class to help guide you.
+```{r}
+#To add age group variable
+Wong$agegrp <- case_when(
+  (Wong$age > 0 & Wong$age <= 10) ~ 1,
+  (Wong$age > 10 & Wong$age <= 20) ~ 2,
+  (Wong$age > 20 & Wong$age <= 30) ~ 3,
+  (Wong$age > 30 & Wong$age <= 40) ~ 4,
+  (Wong$age > 40 & Wong$age <= 50) ~ 5,
+  (Wong$age > 50 & Wong$age <= 60) ~ 6,
+  (Wong$age > 60 & Wong$age <= 70) ~ 7,
+  (Wong$age > 70 & Wong$age <= 100) ~ 8)
+
+#To convert to factor and add code levels and labels
+Wong$agegrp <- factor(Wong$agegrp, levels = c(1,2,3,4,5,6,7,8), labels = c("Ages 1-10", "Ages 11-10", "Ages 21-10", "Ages 31-10", "Ages 41-10", "Ages 51-10", "Ages 61-70", "Ages 71-100"))
+
+#To find sample size or number of rows in dataset
+ss <- length(Wong$agegrp)
+
+#To group by each level of age group, find the raw counts and compute the relative %
+Table3 <- Wong %>%
+  group_by(agegrp) %>%
+  summarise(freq = n(), pct = n()*100/ss)
+
+#To make a summary table
+knitr::kable(Table3, col.names = c("Age Group", "Frequency", "Percent"), caption="Frequency Table Sorted by Age Group")
+
+```
 
 4. Make a regression model (Model 1) for the performance IQ (`piq`) using `age` and `sex`. Put the regression model results into a table.
+```{r}
+m1 <- lm(piq~age + sex, data=Wong)
+sm1 <- summary(m1)
+knitr::kable(sm1$coefficients, caption="Model 1: Performance IQ vs Age and Sex")
+
+```
 
 5. Make a second regression model (Model 2) for performance IQ (`piq`) using `age` and `sex` plus `days` and `duration`. Put the regression model results into a table.
+```{r}
+m2 <- lm(piq~age+sex+days+duration, data=Wong)
+sm2 <- summary(m2)
+knitr::kable(sm2$coefficients, caption="Model 2: Performance IQ vs Age, Sex, Days and Duration")
+
+```
 
 6. Finally, make a table showing the results from the `anova()` command comparing Model 1 and Model 2 you made above using the example we did in class as a guide. 
+```{r}
+anova(m1,m2)
+## Analysis of Variance Table
+## 
+## Model 1: piq ~ age + sex
+## Model 2: piq ~ age + sex + days + duration
+##   Res.Df   RSS Df Sum of Sq      F  Pr(>F)   
+## 1    328 74968                               
+## 2    326 72586  2    2381.9 5.3489 0.00518 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## Analysis of Variance Table
+## 
+## Model 1: piq ~ age + sex
+## Model 2: piq ~ age + sex + days + duration
+##   Res.Df   RSS Df Sum of Sq      F  Pr(>F)   
+## 1    328 74968                               
+## 2    326 72586  2    2381.9 5.3489 0.00518 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+m1m2 <- anova(m1,m2)
+row.names(m1m2) <- c("Model 1","Model 2")
+knitr::kable(m1m2, caption = "Compare Model 1 and Model 2")
+
+```
 
 7. STUDENT CHOICE - pick either a `htmlwidget` from [http://gallery.htmlwidgets.org/](http://gallery.htmlwidgets.org/) or do a "flexdashboard" using the templates at [http://rmarkdown.rstudio.com/flexdashboard/](http://rmarkdown.rstudio.com/flexdashboard/) as a guide.
+
+```{r setup, include=FALSE}
+library(car)
+data("Wong")
+library(flexdashboard)
+```
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Age in Wong dataset
+```{r}
+car::Wong
+Wong$age
+```
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Sex in Wong dataset
+```{r}
+car::Wong
+Wong$sex
+```
+### Performance IQ in Wong dataset
+```{r}
+car::Wong
+Wong$piq
+```
 
 ### References
 
